@@ -1,0 +1,52 @@
+# orchestrator.yaml
+defaults:
+  agent_provider: pydanticai        # pydanticai
+  model_provider: openai            # openai
+  proxy:
+    enabled: true
+    kind: mitmproxy
+    listen_host: 0.0.0.0
+    listen_port: 8002
+  tracing_api:
+    host: 127.0.0.1
+    port: 7000
+  mcp:
+    server_variant: stdio           # stdio | http
+    client_variant: stdio           # should usually match server_variant
+
+lookups:
+  model_reverse_target:
+    openai: "https://api.openai.com"
+    anthropic: "https://api.anthropic.com"
+    azure_openai: "https://<your-azure-endpoint>.openai.azure.com"
+
+  # Per AGENT: define MCP server/client VARIANTS
+  mcp:
+    pydanticai:
+      servers:
+        stdio:
+          type: stdio
+        http:
+          type: http
+          cmd: [ "uv", "run", "python", "-m", "src.agents.pydantic_ai.math_agent.streamable_http_server" ]
+          url: "http://127.0.0.1:8000/mcp"
+      clients:
+        stdio:
+          type: stdio
+          client_path: "./src/agents/pydantic_ai/math_agent/client.py"
+        http:
+          type: http
+          client_path: "./src/agents/pydantic_ai/math_agent/client.py"
+
+profiles:
+  pyd_openai_stdio_proxy:
+    agent_provider: pydanticai
+    model_provider: openai
+    mcp: { server_variant: stdio, client_variant: stdio }
+    proxy: { enabled: true }
+
+  pyd_openai_http_proxy:
+    agent_provider: pydanticai
+    model_provider: openai
+    mcp: { server_variant: http, client_variant: http }
+    proxy: { enabled: true }
