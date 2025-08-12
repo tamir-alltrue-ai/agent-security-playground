@@ -43,12 +43,11 @@ def get_llm():
                 base_url=BASE_URL,
                 default_headers=EXTRA_HEADERS
             )
-            #import pdb; pdb.set_trace()
             return model
         case "gemini":
             return LLM(
                 model='gemini-1.5-flash',
-                api_key=os.environ["GEMINI_API_KEY"],
+                api_key=os.environ["GOOGLE_API_KEY"],
                 base_url=BASE_URL,
                 extra_headers=EXTRA_HEADERS
             )

@@ -33,6 +33,7 @@ app = typer.Typer(no_args_is_help=True, add_completion=False)
 class AgentProvider(StrEnum):
     pydanticai = "pydanticai"
     crew_ai = "crew_ai"
+    langchain = "langchain"
 
 
 class ModelProvider(StrEnum):

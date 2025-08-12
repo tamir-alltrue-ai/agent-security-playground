@@ -1,6 +1,6 @@
 # orchestrator.yaml
 defaults:
-  agent_provider: pydanticai        # pydanticai | crew_ai
+  agent_provider: pydanticai        # pydanticai | crew_ai | langchain
   model_provider: openai            # openai | gemini | anthropic | azure_openai
   proxy:
     enabled: true
@@ -57,6 +57,23 @@ lookups:
           type: http
           client_path: "./src/agents/crew_ai/sample_crew/src/sample_crew/main.py"
           cmd: [ "uv", "run", "python", "-m", "src.agents.crew_ai.sample_crew.src.sample_crew.main" ]
+    langchain:
+      servers:
+        stdio:
+          type: stdio
+        http:
+          type: http
+          cmd: [ "uv", "run", "python", "-m", "src.mcp_servers.math_streamable_http" ]
+          url: "http://127.0.0.1:8000/mcp"
+      clients:
+        stdio:
+          type: stdio
+          client_path: "./src/agents/langchain/math_agent/client.py"
+          cmd: [ "uv", "run", "python", "-m", "src.agents.langchain.math_agent.client" ]
+        http:
+          type: http
+          client_path: "./src/agents/langchain/math_agent/client.py"
+          cmd: [ "uv", "run", "python", "-m", "src.agents.langchain.math_agent.client" ]
 
 
 profiles:
@@ -82,4 +99,10 @@ profiles:
     agent_provider: crew_ai
     model_provider: openai
     mcp: { server_variant: http, client_variant: http }
+    proxy: { enabled: true }
+
+  langchain_openai_stdio_proxy:
+    agent_provider: langchain
+    model_provider: openai
+    mcp: { server_variant: stdio, client_variant: stdio }
     proxy: { enabled: true }

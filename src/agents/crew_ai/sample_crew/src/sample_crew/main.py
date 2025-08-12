@@ -26,8 +26,6 @@ def run():
     try:
         SampleCrew().crew().kickoff(inputs=inputs)
     except Exception as e:
-        import pdb; pdb.set_trace()
-
         raise Exception(f"An error occurred while running the crew: {e}")
 
 

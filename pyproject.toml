@@ -27,6 +27,14 @@ proxy = [
     "mitmproxy"
 ]
 
+langchain = [
+    "langchain>=0.3.27",
+    "langgraph",
+    "langchain-mcp-adapters",
+    "langchain-anthropic",
+    "langchain-google-genai",
+]
+
 api = [
     "fastapi",
     "uvicorn",
