@@ -1,7 +1,7 @@
 # orchestrator.yaml
 defaults:
-  agent_provider: pydanticai        # pydanticai
-  model_provider: openai            # openai
+  agent_provider: pydanticai        # pydanticai | crew_ai
+  model_provider: openai            # openai | gemini | anthropic | azure_openai
   proxy:
     enabled: true
     kind: mitmproxy
@@ -18,7 +18,8 @@ lookups:
   model_reverse_target:
     openai: "https://api.openai.com"
     anthropic: "https://api.anthropic.com"
-    azure_openai: "https://<your-azure-endpoint>.openai.azure.com"
+    azure_openai: "https://test-customer.openai.azure.com"
+    gemini: "https://gemini.api.google.com"
 
   # Per AGENT: define MCP server/client VARIANTS
   mcp:
@@ -28,15 +29,35 @@ lookups:
           type: stdio
         http:
           type: http
-          cmd: [ "uv", "run", "python", "-m", "src.agents.pydantic_ai.math_agent.streamable_http_server" ]
+          cmd: [ "uv", "run", "python", "-m", "src.mcp_servers.math_streamable_http" ]
           url: "http://127.0.0.1:8000/mcp"
       clients:
         stdio:
           type: stdio
           client_path: "./src/agents/pydantic_ai/math_agent/client.py"
+          cmd: [ "uv", "run", "python", "-m", "src.agents.pydantic_ai.math_agent.client" ]
         http:
           type: http
           client_path: "./src/agents/pydantic_ai/math_agent/client.py"
+          cmd: [ "uv", "run", "python", "-m", "src.agents.pydantic_ai.math_agent.client" ]
+    crew_ai:
+      servers:
+        stdio:
+          type: stdio
+        http:
+          type: http
+          cmd: [ "uv", "run", "python", "-m", "src.mcp_servers.math_streamable_http" ]
+          url: "http://127.0.0.1:8000/mcp"
+      clients:
+        stdio:
+          type: stdio
+          client_path: "./src/agents/crew_ai/sample_crew/src/sample_crew/main.py"
+          cmd: [ "uv", "run", "python", "-m", "src.agents.crew_ai.sample_crew.src.sample_crew.main" ]
+        http:
+          type: http
+          client_path: "./src/agents/crew_ai/sample_crew/src/sample_crew/main.py"
+          cmd: [ "uv", "run", "python", "-m", "src.agents.crew_ai.sample_crew.src.sample_crew.main" ]
+
 
 profiles:
   pyd_openai_stdio_proxy:
@@ -47,6 +68,18 @@ profiles:
 
   pyd_openai_http_proxy:
     agent_provider: pydanticai
+    model_provider: openai
+    mcp: { server_variant: http, client_variant: http }
+    proxy: { enabled: true }
+
+  crew_openai_stdio_proxy:
+    agent_provider: crew_ai
+    model_provider: openai
+    mcp: { server_variant: stdio, client_variant: stdio }
+    proxy: { enabled: true }
+
+  crew_openai_http_proxy:
+    agent_provider: crew_ai
     model_provider: openai
     mcp: { server_variant: http, client_variant: http }
     proxy: { enabled: true }

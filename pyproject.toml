@@ -14,6 +14,13 @@ pydantic_ai = [
     "mcp==1.12.4",
     "pydantic-ai[logfire]>=0.6.2",
     "openai==1.99.1",
+    "anthropic>=0.62.0",
+    "google-genai>=1.29.0",
+]
+
+crew = [
+    "crewai[tools]>=0.157.0,<1.0.0",
+    "crewai-tools[mcp]"
 ]
 
 proxy = [
@@ -26,3 +33,10 @@ api = [
     "protobuf",
     "opentelemetry-proto",
 ]
+
+
+[project.scripts]
+run_crew = "src.agents.crew_ai.sample_crew.src.sample_crew.main:run"
+train_crew = "src.agents.crew_ai.sample_crew.src.sample_crew.main:train"
+replay_crew = "src.agents.crew_ai.sample_crew.src.sample_crew.main:replay"
+test_crew = "src.agents.crew_ai.sample_crew.src.sample_crew.main:test"

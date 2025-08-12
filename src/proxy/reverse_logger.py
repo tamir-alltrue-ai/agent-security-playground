@@ -29,9 +29,13 @@ class ReverseLogger:
 
     def request(self, flow: http.HTTPFlow) -> None:
         r = flow.request
+
         # openai hack
         if r.path == "/chat/completions" and "openai" in r.host:
             r.path = "/v1/chat/completions"
+        # azure openai hack
+        elif "openai.azure.com" in r.host and not r.path.startswith("/openai"):
+            r.path = "/openai" + r.path
         entry = {
             "ts": time.time(),
             "event": "request",

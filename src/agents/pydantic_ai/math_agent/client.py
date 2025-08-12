@@ -4,8 +4,6 @@ from datetime import datetime
 import logfire
 from dotenv import load_dotenv
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIModel
-from pydantic_ai.providers.openai import OpenAIProvider
 import random
 
 from pydantic_ai.settings import ModelSettings
@@ -26,16 +24,65 @@ if BASE_URL:
 
 logfire.configure(send_to_logfire="if-token-present")
 logfire.instrument_pydantic_ai()
-
+EXTRA_HEADERS = {"alltrue-endpoint-identifier": "pydantic-ai-runner"} if BASE_URL else {}
 
 def get_model(provider: str, base_url: str | None = None):
     if provider == "openai":
         api_key = os.environ["OPENAI_API_KEY"]
+        from pydantic_ai.models.openai import OpenAIModel
+        from pydantic_ai.providers.openai import OpenAIProvider
+
         return OpenAIModel('gpt-4o', provider=OpenAIProvider(api_key=api_key, base_url=base_url),
                            settings=ModelSettings(
-                               extra_headers={"alltrue-endpoint-identifier": "pydantic-ai-runner"} if base_url else {}
+                               extra_headers=EXTRA_HEADERS
                            )
                            )
+    elif provider == "azure_openai":
+        api_key = os.environ["AZURE_OPENAI_API_KEY"]
+        from openai import AsyncAzureOpenAI
+        from pydantic_ai.models.openai import OpenAIModel
+        from pydantic_ai.providers.openai import OpenAIProvider
+
+        client = AsyncAzureOpenAI(
+            api_version='2024-07-01-preview',
+            api_key=api_key,
+            default_headers=EXTRA_HEADERS,
+            base_url=base_url,
+        )
+        model = OpenAIModel(
+            'test',
+            provider=OpenAIProvider(openai_client=client),
+        )
+        return model
+    elif provider == "anthropic":
+        api_key = os.environ["ANTHROPIC_API_KEY"]
+        from pydantic_ai.models.anthropic import AnthropicModel
+        from pydantic_ai.providers.anthropic import AnthropicProvider
+        from anthropic import AsyncAnthropic
+        client = AsyncAnthropic(
+            api_key=api_key, base_url=base_url, default_headers=EXTRA_HEADERS
+        )
+        return AnthropicModel('claude-3-7-sonnet-latest',
+                              provider=AnthropicProvider(anthropic_client=client))
+    elif provider == "gemini":
+        api_key = os.environ.get("GOOGLE_API_KEY")
+        from pydantic_ai.models.google import GoogleModel
+        from pydantic_ai.providers.google import GoogleProvider
+        from google import genai
+        from google.genai.types import HttpOptions
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY environment variable is required for Google provider.")
+
+        client = genai.Client(
+            api_key=api_key,
+            http_options=HttpOptions(base_url=base_url, headers=EXTRA_HEADERS),
+        )
+        provider = GoogleProvider(client=client)
+        model = GoogleModel(
+            'gemini-1.5-flash',
+            provider=provider,
+        )
+        return model
     else:
         raise ValueError(f"Unsupported provider: {provider}")
 
@@ -45,7 +92,7 @@ def get_server(server_type: str):
         return MCPServerStreamableHTTP(MCP_SERVER_URL)
     elif server_type == "stdio":
         return MCPServerStdio(
-            command='python', args=['src/agents/pydantic_ai/math_agent/stdio_server.py'],
+            command='python', args=['src/mcp_servers/math_stdio.py'],
             cwd=ROOT_DIR)
     else:
         raise ValueError(f"Unsupported server type: {server_type}")

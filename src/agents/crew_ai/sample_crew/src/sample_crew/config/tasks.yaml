@@ -1,0 +1,25 @@
+research_task:
+  description: >
+    Search the web to find numbers in total usage per top provider in {topic}
+    the current year is {current_year}.
+  expected_output: >
+    A list with 10 bullet points with the download numbers top top player in {topic}
+  agent: researcher
+
+math_task:
+  description: >
+    Add the numbers you got from the researcher together to get a total number.
+    Do not add the numbers yourself as you make mistakes - you must use the tools available to you to
+    do the math
+  expected_output: >
+    A single number with the total usage of all top players in {topic}
+  agent: mathematician
+
+reporting_task:
+  description: >
+    Review the context you got and expand each topic into a full section for a report.
+    Make sure the report contains the totals from the mathematician.
+  expected_output: >
+    A fully fledged report with the main topics, each with a full section of information.
+    Formatted as markdown without '```'
+  agent: reporting_analyst

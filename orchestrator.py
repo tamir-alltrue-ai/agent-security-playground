@@ -11,7 +11,7 @@ import sys
 import time
 from enum import StrEnum
 from pathlib import Path
-from typing import Literal, Optional, Tuple
+from typing import Literal, Optional, Tuple, NoReturn
 from urllib.parse import urlparse
 
 import typer
@@ -32,10 +32,14 @@ app = typer.Typer(no_args_is_help=True, add_completion=False)
 
 class AgentProvider(StrEnum):
     pydanticai = "pydanticai"
+    crew_ai = "crew_ai"
 
 
 class ModelProvider(StrEnum):
     openai = "openai"
+    anthropic = "anthropic"
+    azure_openai = "azure_openai"
+    gemini = "gemini"
 
 
 class ProxyKind(StrEnum):
@@ -56,9 +60,7 @@ class TracingCfg(BaseModel):
 
 
 class ClientCfg(BaseModel):
-    cmd: list[str] = Field(
-        default_factory=lambda: ["uv", "run", "python", "-m", "src.agents.pydantic_ai.math_agent.client"]
-    )
+    cmd: list[str] = Field(...)
     args: list[str] = Field(default_factory=list)
 
 
@@ -67,7 +69,7 @@ class Config(BaseModel):
     model_provider: ModelProvider = ModelProvider.openai
     proxy: ProxyCfg = ProxyCfg()
     tracing_api: TracingCfg = TracingCfg()
-    client: ClientCfg = ClientCfg()
+    client: ClientCfg
 
     # Flattened MCP variant choices (selected values)
     mcp_server_variant: str = "stdio"
@@ -92,7 +94,7 @@ class Lookups(BaseModel):
 # Utilities
 # ----------------------------
 
-def die(msg: str) -> None:
+def die(msg: str) -> NoReturn:
     typer.secho(msg, fg=typer.colors.RED, err=True)
     raise SystemExit(1)
 
@@ -154,16 +156,20 @@ def load_all(config_path: str, profile: Optional[str]) -> Tuple[Config, Lookups,
         if "client_variant" in mcp_nested:
             cfg_dict["mcp_client_variant"] = mcp_nested["client_variant"]
 
-    try:
-        cfg = Config.model_validate(cfg_dict)
-    except ValidationError as e:
-        die(f"Invalid 'defaults/profiles' config: {e}")
-
     lookups_raw = raw.get("lookups", {})
+
     try:
         lookups = Lookups.model_validate(lookups_raw)
     except ValidationError as e:
         die(f"Invalid 'lookups' config: {e}")
+
+
+    cfg_dict["client"] = lookups.mcp[cfg_dict["agent_provider"]]["clients"][cfg_dict["mcp_client_variant"]]
+
+    try:
+        cfg = Config.model_validate(cfg_dict)
+    except ValidationError as e:
+        die(f"Invalid 'defaults/profiles' config: {e}")
 
     return cfg, lookups, raw
 
